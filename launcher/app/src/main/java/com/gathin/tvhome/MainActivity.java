@@ -304,6 +304,16 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         btnWifi = findViewById(R.id.btnWifi);
         if (!cfg.showNetworkPill) btnWifi.setVisibility(View.GONE);
         prayerLine = findViewById(R.id.prayerTimes);
+        // Your own pictures are not dimmed like the places are, and a bright one can swallow white text:
+        // a soft shadow under every word on the picture keeps it readable without darkening the picture.
+        if (!placesMode) {
+            int[] onPicture = {R.id.clock, R.id.ampm, R.id.date, R.id.shamsiDate, R.id.prayerTimes,
+                    R.id.heroName, R.id.heroWhere, R.id.heroDesc};
+            for (int id : onPicture) {
+                ((TextView) findViewById(id)).setShadowLayer(6 * density, 0f, 1.5f * density, 0xB3000000);
+            }
+            prayerLine.setTextColor(0xD9FFFFFF);   // the times that are not next, brighter than over a dimmed place
+        }
         if (cfg.prayerTimes) {
             prayerCfg = cfg;
             prayerLine.setVisibility(View.VISIBLE);
