@@ -62,6 +62,8 @@ final class Config {
     final List<File> wallpapers;
     /** Time between wallpaper changes (wallpaper_seconds, else wallpaper_minutes); 0 changes only when Home starts. */
     final long wallpaperIntervalMs;
+    /** Pictures in a shuffled order, every one shown once before any comes back (wallpaper_shuffle). */
+    final boolean wallpaperShuffle;
     /** Pictures of places to visit, renewed weekly (see PlaceWallpapers); "places": false keeps them off. */
     final boolean places;
     /** Days between clearing the TV's app caches (see CacheCleaner); 0 never does. */
@@ -87,7 +89,7 @@ final class Config {
                    boolean shamsiDate, boolean moduleCards, boolean reducedMotion, String vpnApp,
                    boolean showHomeSettingsShortcut, boolean showNetworkPill, boolean showLiveTv,
                    int backgroundColor,
-                   File wallpaper, List<File> wallpapers, long wallpaperIntervalMs,
+                   File wallpaper, List<File> wallpapers, long wallpaperIntervalMs, boolean wallpaperShuffle,
                    boolean places, int cacheCleanDays, boolean showPlaceInfo,
                    List<String[]> quotes, long quoteIntervalMs,
                    boolean prayerTimes, double prayerLatitude, double prayerLongitude, int[] prayerAdjust,
@@ -112,6 +114,7 @@ final class Config {
         this.wallpaper = wallpaper;
         this.wallpapers = Collections.unmodifiableList(wallpapers);
         this.wallpaperIntervalMs = wallpaperIntervalMs;
+        this.wallpaperShuffle = wallpaperShuffle;
         this.places = places;
         this.cacheCleanDays = cacheCleanDays;
         this.showPlaceInfo = showPlaceInfo;
@@ -190,6 +193,7 @@ final class Config {
         int wallpaperMinutes = json != null ? integer(json, "wallpaper_minutes", 30, 0, 1440) : 30;
         int wallpaperSeconds = json != null ? integer(json, "wallpaper_seconds", 0, 5, 86400) : 0;
         long wallpaperIntervalMs = wallpaperSeconds > 0 ? wallpaperSeconds * 1000L : wallpaperMinutes * 60_000L;
+        boolean wallpaperShuffle = json != null && bool(json, "wallpaper_shuffle", false);
         // On unless a theme says otherwise: a fresh install shows places with nothing to set up.
         boolean places = wallpaperOn && (json == null || bool(json, "places", true));
         int cacheCleanDays = json != null ? integer(json, "cache_clean_days", CacheCleaner.DEFAULT_DAYS, 0, 90)
@@ -213,7 +217,7 @@ final class Config {
 
         return new Config(dock, hidden, liveTv, liveTvAction, panelService, panelAction, inputAction,
                 Math.max(1, columns), Math.max(0, rowsBelow), shamsi, moduleCards, reducedMotion,
-                vpn, homeSettings, networkPill, liveTvRow, background, wallpaper, wallpapers, wallpaperIntervalMs,
+                vpn, homeSettings, networkPill, liveTvRow, background, wallpaper, wallpapers, wallpaperIntervalMs, wallpaperShuffle,
                 places, cacheCleanDays, placeInfo, quotes, quoteIntervalMs, prayer, prayerLat, prayerLng, prayerAdjust, applied);
     }
 

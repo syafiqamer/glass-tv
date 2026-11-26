@@ -175,6 +175,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
     private final Handler handler = new Handler(Looper.getMainLooper());
     /** Rotating wallpaper (Config.wallpapers), the view that shows it and the bitmap on screen. */
     private List<File> wallpapers = Collections.emptyList();
+    private boolean wallpaperShuffle;
     private long wallpaperIntervalMs;
     /** Decodes the next picture off the main thread, so a switch never stutters the D-pad animations. */
     private final java.util.concurrent.ExecutorService wallDecoder = java.util.concurrent.Executors.newSingleThreadExecutor();
@@ -270,6 +271,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         config = cfg;
         wallpapers = cfg.wallpapers;
         wallpaperIntervalMs = cfg.wallpaperIntervalMs;
+        wallpaperShuffle = cfg.wallpaperShuffle;
         placesMode = cfg.places;
         // Places only, when they are on: never the theme's own pictures, even before the first
         // week's places have arrived.
@@ -580,10 +582,46 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         Backdrop.update(bmp, dm.widthPixels, dm.heightPixels, placesMode ? 0xFF7A7A7A : 0, wallDecoder, handler);
     }
 
+    /**
+     * The next picture in a shuffled order: every picture once, in a new random order each round, and a
+     * new round never starts with the picture that ended the last one. The order survives restarts.
+     */
+    private static int nextShuffled(android.content.SharedPreferences prefs, int n) {
+        String[] saved = prefs.getString("order", "").split(",");
+        int pos = prefs.getInt("pos", 0);
+        int[] order = null;
+        if (saved.length == n && pos < n) {
+            try {
+                order = new int[n];
+                for (int i = 0; i < n; i++) order[i] = Integer.parseInt(saved[i]);
+            } catch (NumberFormatException e) {
+                order = null;
+            }
+        }
+        if (order == null) {
+            List<Integer> round = new java.util.ArrayList<>();
+            for (int i = 0; i < n; i++) round.add(i);
+            Collections.shuffle(round);
+            int last = prefs.getInt("index", -1);
+            if (n > 1 && round.get(0) == last) Collections.swap(round, 0, n - 1);
+            order = new int[n];
+            StringBuilder s = new StringBuilder();
+            for (int i = 0; i < n; i++) {
+                order[i] = round.get(i);
+                s.append(i == 0 ? "" : ",").append(order[i]);
+            }
+            prefs.edit().putString("order", s.toString()).apply();
+            pos = 0;
+        }
+        prefs.edit().putInt("pos", pos + 1).apply();
+        return order[pos];
+    }
+
     /** Shows the next picture from the wallpapers folder; the position survives restarts. */
     private void showNextWallpaper(boolean fade) {
         android.content.SharedPreferences prefs = getSharedPreferences("wallpaper", MODE_PRIVATE);
-        int next = (prefs.getInt("index", -1) + 1) % wallpapers.size();
+        int next = wallpaperShuffle ? nextShuffled(prefs, wallpapers.size())
+                : (prefs.getInt("index", -1) + 1) % wallpapers.size();
         prefs.edit().putInt("index", next).apply();
         wallShownAt = android.os.SystemClock.elapsedRealtime();
         final File file = wallpapers.get(next);
