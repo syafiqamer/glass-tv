@@ -552,16 +552,19 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
             android.graphics.drawable.TransitionDrawable t = new android.graphics.drawable.TransitionDrawable(new android.graphics.drawable.Drawable[]{
                     new android.graphics.drawable.BitmapDrawable(getResources(), old),
                     new android.graphics.drawable.BitmapDrawable(getResources(), bmp)});
-            t.setCrossFadeEnabled(true);
+            // The new picture fades in over the old one, which stays fully drawn underneath. With the
+            // cross-fade on, the old one faded out at the same time: halfway, both were half see-through
+            // and the black window showed through them, so every change dipped to dark.
+            t.setCrossFadeEnabled(false);
             wallView.setImageDrawable(t);
-            t.startTransition(800);
-            // The glass fades to the new picture over the same 800 ms as the wallpaper itself.
-            if (blur != null) Backdrop.present(blur, 800);
+            t.startTransition(1200);
+            // The glass fades to the new picture over the same 1.2 s as the wallpaper itself.
+            if (blur != null) Backdrop.present(blur, 1200);
             else blurBackdrop(bmp);
             // Drop the old picture once the fade is done, so only one 1080p bitmap stays in memory.
             handler.postDelayed(() -> {
                 if (wallBitmap == bmp) wallView.setImageBitmap(bmp);
-            }, 900);
+            }, 1300);
         } else {
             wallView.setImageBitmap(bmp);
             if (blur != null) Backdrop.present(blur, 0);
